@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mars Botany Rescue: Seed Survival</title>
+    <style>
+        :root {
+            --bg-space: #0b0d17;
+            --panel-bg: #161b33;
+            --accent-neon: #00f2fe;
+            --accent-green: #00ff87;
+            --accent-red: #ff0055;
+            --text-main: #e0e6ed;
+            --border-glow: #2a365c;
+        }
+
+        body {
+            font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+            background-color: var(--bg-space);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .hud-container {
+            background: var(--panel-bg);
+            border: 2px solid var(--accent-neon);
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 0 25px rgba(0, 242, 254, 0.25);
+            position: relative;
+        }
+
+        .hud-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px dashed var(--border-glow);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .mission-title {
+            font-size: 1.5rem;
+            color: var(--accent-neon);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin: 0;
+        }
+
+        .energy-bar {
+            background: #090a10;
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--accent-green);
+            color: var(--accent-green);
+            font-weight: bold;
+        }
+
+        .story-text {
+            background: rgba(0, 0, 0, 0.4);
+            border-left: 4px solid var(--accent-neon);
+            padding: 12px 16px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-size: 1rem;
+            line-height: 1.4;
+        }
+
+        .action-area {
+            margin-bottom: 25px;
+        }
+
+        .grid-options {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .btn-action {
+            background: #1f2747;
+            border: 1px solid var(--border-glow);
+            color: var(--text-main);
+            padding: 14px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            text-align: left;
+            transition: all 0.2s ease;
+        }
+
+        .btn-action:hover:not(:disabled) {
+            background: #2a365c;
+            border-color: var(--accent-neon);
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.3);
+            transform: scale(1.01);
+        }
+
+        .btn-action.correct {
+            background: rgba(0, 255, 135, 0.2) !important;
+            border-color: var(--accent-green) !important;
+            color: var(--accent-green) !important;
+        }
+
+        .btn-action.wrong {
+            background: rgba(255, 0, 85, 0.2) !important;
+            border-color: var(--accent-red) !important;
+            color: var(--accent-red) !important;
+        }
+
+        /* Interactive Simulator Dials */
+        .sim-controls {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .sim-dial {
+            text-align: center;
+        }
+
+        .sim-dial select {
+            background: #0b0d17;
+            color: var(--accent-neon);
+            border: 1px solid var(--accent-neon);
+            padding: 8px;
+            border-radius: 6px;
+            margin-top: 5px;
+            font-size: 0.95rem;
+        }
+
+        #feedback-box {
+            display: none;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            line-height: 1.4;
+        }
+
+        .nav-btn {
+            background: var(--accent-neon);
+            color: #000;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            float: right;
+            display: none;
+            margin-top: 15px;
+        }
+
+        .nav-btn:hover {
+            background: var(--accent-green);
+        }
+
+        /* Orderable sequence list */
+        .seq-list {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .seq-item {
+            background: #1f2747;
+            border: 1px solid var(--border-glow);
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .seq-btn-group button {
+            background: var(--accent-neon);
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-left: 4px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+
+        .data-table th, .data-table td {
+            border: 1px solid var(--border-glow);
+            padding: 8px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="hud-container">
+    <div class="hud-header">
+        <h1 class="mission-title">🚀 Mars Botany Rescue</h1>
+        <div class="energy-bar">Colony Power: <span id="power-val">100%</span></div>
+    </div>
+
+    <div id="game-screen">
+        <div class="story-text" id="story-box">Loading mission protocol...</div>
+        <div class="action-area" id="action-box"></div>
+        <div id="feedback-box"></div>
+        <button class="nav-btn" id="next-btn" onclick="nextStage()">Next Stage ➔</button>
+    </div>
+</div>
+
+<script>
+let currentStage = 0;
+let colonyPower = 100;
+
+const stages = [
+    {
+        story: "🚨 <strong>EMERGENCY LEVEL 1: Bio-Chemistry Calibration</strong><br>The greenhouse synthesisers need raw materials to rebuild crop enzymes. What chemical element must be combined with glucose to create amino acids?",
+        type: "mcq",
+        opts: [
+            "Phosphates from soil dust",
+            "Nitrates absorbed by plant roots",
+            "Pure oxygen gas",
+            "Potassium ions"
+        ],
+        a: 1,
+        exp: "Nitrates supply the vital Nitrogen needed alongside glucose to synthesise amino acids, which form the plant's essential growth enzymes!"
+    },
+    {
+        story: "🔍 <strong>EMERGENCY LEVEL 2: Seed Scan</strong><br>Scanners detect dormant bean seeds in stasis. The emergency automated system claims: <em>'Seeds require sunlight inside the dark soil chamber to initiate germination.'</em> Is this protocol correct?",
+        type: "mcq",
+        opts: [
+            "Correct: Germination cannot start without solar radiation.",
+            "Incorrect: Seeds only need WOW (Water, Oxygen, Warmth); light is required later when leaves emerge for photosynthesis.",
+            "Incorrect: Seeds need zero oxygen, only water and intense heat."
+        ],
+        a: 1,
+        exp: "Seeds germinate underground in the dark! Sunlight is only needed once the first green shoot emerges to begin photosynthesis."
+    },
+    {
+        story: "🎛️ <strong>EMERGENCY LEVEL 3: Environmental Chamber Simulator</strong><br>Configure the growth chamber dials to activate seed germination for crop production!",
+        type: "sim",
+        exp: "Optimal conditions achieved! Seeds require Water (hydrates cells & activates enzymes), Oxygen (aerobic respiration for energy), and Warmth (optimal enzyme kinetic activity)."
+    },
+    {
+        story: "🔄 <strong>EMERGENCY LEVEL 4: Growth Sequence Rebuild</strong><br>The growth timeline computer crashed! Use the UP/DOWN buttons to align the germination events in the correct chronological order from first (1) to last (4):",
+        type: "seq",
+        items: [
+            "Seed absorbs water (imbibition) and swells",
+            "Amylase converts stored starch into soluble glucose",
+            "The radicle (root) breaks through the seed coat",
+            "Plumule (shoot) unrolls green leaves for photosynthesis"
+        ],
+        exp: "Correct sequence locked! Water absorption activates enzymes ➔ Starch breaks down into glucose for respiration ➔ The root ruptures the coat ➔ First leaves open for photosynthesis!"
+    },
+    {
+        story: "📊 <strong>EMERGENCY LEVEL 5: Crop Yield Optimization</strong><br>Review the Mars hydroponic yield trial data below. Why does crop germination collapse at 35°C?<br><br>" +
+               "<table class='data-table'><tr><th>Temp (°C)</th><th>5°C</th><th>15°C</th><th>25°C</th><th>35°C</th></tr><tr><th>Yield (%)</th><td>12%</td><td>88%</td><td>94%</td><td>4%</td></tr></table>",
+        type: "mcq",
+        opts: [
+            "Excessive water evaporation dries out the seeds instantly.",
+            "Enzymes controlling germination denature (active sites deform) at 35°C, stopping growth.",
+            "Oxygen gas freezes at 35°C.",
+            "Starch converts back into nitrates at high temperatures."
+        ],
+        a: 1,
+        exp: "At 35°C, excessive heat causes the 3D structure of plant enzymes to denature, deforming their active site and halting all metabolic growth processes!"
+    }
+];
+
+function renderStage() {
+    const stage = stages[currentStage];
+    document.getElementById('story-box').innerHTML = stage.story;
+    document.getElementById('feedback-box').style.display = 'none';
+    document.getElementById('next-btn').style.display = 'none';
+
+    const actionBox = document.getElementById('action-box');
+    actionBox.innerHTML = '';
+
+    if (stage.type === 'mcq') {
+        const grid = document.createElement('div');
+        grid.className = 'grid-options';
+        stage.opts.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-action';
+            btn.innerText = `${String.fromCharCode(65 + idx)}) ${opt}`;
+            btn.onclick = () => checkMCQ(idx);
+            grid.appendChild(btn);
+        });
+        actionBox.appendChild(grid);
+    } else if (stage.type === 'sim') {
+        actionBox.innerHTML = `
+            <div class="sim-controls">
+                <div class="sim-dial">
+                    <label>Water Level:</label><br>
+                    <select id="sim-water"><option value="dry">Dry</option><option value="moist">Moist</option></select>
+                </div>
+                <div class="sim-dial">
+                    <label>Oxygen Gas:</label><br>
+                    <select id="sim-o2"><option value="none">Zero O2 (Oil Layer)</option><option value="present">Present (Air)</option></select>
+                </div>
+                <div class="sim-dial">
+                    <label>Temperature:</label><br>
+                    <select id="sim-temp"><option value="0">0°C (Freezing)</option><option value="20">20°C (Warm)</option></select>
+                </div>
+            </div>
+            <button class="btn-action" style="text-align:center; font-weight:bold;" onclick="checkSim()">Run Environmental Simulation 🚀</button>
+        `;
+    } else if (stage.type === 'seq') {
+        const ul = document.createElement('ul');
+        ul.className = 'seq-list';
+        stage.items.forEach((itemText, idx) => {
+            const li = document.createElement('li');
+            li.className = 'seq-item';
+            li.innerHTML = `<span>${itemText}</span>
+                <div class="seq-btn-group">
+                    <button onclick="moveSeq(${idx}, -1)">▲</button>
+                    <button onclick="moveSeq(${idx}, 1)">▼</button>
+                </div>`;
+            ul.appendChild(li);
+        });
+        actionBox.appendChild(ul);
+
+        const confirmBtn = document.createElement('button');
+        confirmBtn.className = 'btn-action';
+        confirmBtn.style.marginTop = '15px';
+        confirmBtn.style.textAlign = 'center';
+        confirmBtn.style.fontWeight = 'bold';
+        confirmBtn.innerText = 'Lock Sequence Pattern 🔒';
+        confirmBtn.onclick = checkSeq;
+        actionBox.appendChild(confirmBtn);
+    }
+}
+
+function checkMCQ(selected) {
+    const stage = stages[currentStage];
+    const btns = document.querySelectorAll('.btn-action');
+    btns.forEach((btn, idx) => {
+        btn.disabled = true;
+        if (idx === stage.a) btn.classList.add('correct');
+        else if (idx === selected) btn.classList.add('wrong');
+    });
+
+    const fb = document.getElementById('feedback-box');
+    fb.style.display = 'block';
+
+    if (selected === stage.a) {
+        fb.style.background = 'rgba(0, 255, 135, 0.15)';
+        fb.style.border = '1px solid var(--accent-green)';
+        fb.innerHTML = `<strong>SUCCESS:</strong> ${stage.exp}`;
+    } else {
+        colonyPower = Math.max(0, colonyPower - 15);
+        document.getElementById('power-val').innerText = colonyPower + '%';
+        fb.style.background = 'rgba(255, 0, 85, 0.15)';
+        fb.style.border = '1px solid var(--accent-red)';
+        fb.innerHTML = `<strong>SYSTEM WARNING:</strong> Incorrect parameters! -15% Power.<br>${stage.exp}`;
+    }
+    document.getElementById('next-btn').style.display = 'block';
+}
+
+function checkSim() {
+    const water = document.getElementById('sim-water').value;
+    const o2 = document.getElementById('sim-o2').value;
+    const temp = document.getElementById('sim-temp').value;
+    const fb = document.getElementById('feedback-box');
+    fb.style.display = 'block';
+
+    if (water === 'moist' && o2 === 'present' && temp === '20') {
+        fb.style.background = 'rgba(0, 255, 135, 0.15)';
+        fb.style.border = '1px solid var(--accent-green)';
+        fb.innerHTML = `<strong>GERMINATION ACHIEVED:</strong> ${stages[currentStage].exp}`;
+        document.getElementById('next-btn').style.display = 'block';
+    } else {
+        colonyPower = Math.max(0, colonyPower - 10);
+        document.getElementById('power-val').innerText = colonyPower + '%';
+        fb.style.background = 'rgba(255, 0, 85, 0.15)';
+        fb.style.border = '1px solid var(--accent-red)';
+        fb.innerHTML = `<strong>SIMULATION FAILED:</strong> Seeds remained dormant. Remember WOW (Water, Oxygen, Warmth)!`;
+    }
+}
+
+function moveSeq(idx, dir) {
+    if ((idx === 0 && dir === -1) || (idx === stages[currentStage].items.length - 1 && dir === 1)) return;
+    const temp = stages[currentStage].items[idx];
+    stages[currentStage].items[idx] = stages[currentStage].items[idx + dir];
+    stages[currentStage].items[idx + dir] = temp;
+    renderStage();
+}
+
+function checkSeq() {
+    const correctOrder = [
+        "Seed absorbs water (imbibition) and swells",
+        "Amylase converts stored starch into soluble glucose",
+        "The radicle (root) breaks through the seed coat",
+        "Plumule (shoot) unrolls green leaves for photosynthesis"
+    ];
+    
+    const isCorrect = stages[currentStage].items.every((val, idx) => val === correctOrder[idx]);
+    const fb = document.getElementById('feedback-box');
+    fb.style.display = 'block';
+
+    if (isCorrect) {
+        fb.style.background = 'rgba(0, 255, 135, 0.15)';
+        fb.style.border = '1px solid var(--accent-green)';
+        fb.innerHTML = `<strong>SEQUENCE VERIFIED:</strong> ${stages[currentStage].exp}`;
+        document.getElementById('next-btn').style.display = 'block';
+    } else {
+        colonyPower = Math.max(0, colonyPower - 10);
+        document.getElementById('power-val').innerText = colonyPower + '%';
+        fb.style.background = 'rgba(255, 0, 85, 0.15)';
+        fb.style.border = '1px solid var(--accent-red)';
+        fb.innerHTML = `<strong>ERROR:</strong> Incorrect biological timeline! Re-order the steps and try again.`;
+    }
+}
+
+function nextStage() {
+    currentStage++;
+    if (currentStage < stages.length) {
+        renderStage();
+    } else {
+        document.getElementById('game-screen').innerHTML = `
+            <div style="text-align:center; padding: 20px;">
+                <h2 style="color:var(--accent-green);">🎉 MISSION ACCOMPLISHED!</h2>
+                <p style="font-size:1.2rem;">You successfully restored Mars Greenhouse Alpha with <strong>${colonyPower}% Power remaining</strong>!</p>
+                <p>Your 12-year-old botanists are now certified seed germination experts.</p>
+                <button class="nav-btn" style="display:inline-block; float:none; margin-top:20px;" onclick="location.reload()">Replay Mission 🔄</button>
+            </div>
+        `;
+    }
+}
+
+renderStage();
+</script>
+</body>
+</html>
